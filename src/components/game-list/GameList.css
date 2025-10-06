@@ -1,0 +1,5 @@
+#game-list-container {
+    padding: 0.5rem;
+    display: flex;
+    gap: 0.5rem;
+}

@@ -1,0 +1,19 @@
+#general-header {
+    height: 4rem;
+    width: 100%;
+    display: flex;
+}
+
+#svg {
+    width: 20%;
+}
+
+#header-content {
+    width: 80%;
+}
+
+#label {
+    height: 3rem;
+    width: 3rem;
+    padding-left: 0.1rem;
+}
