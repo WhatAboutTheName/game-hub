@@ -34,7 +34,7 @@ function TicTacToe() {
         isStarted: false,
         step: 0
     });
-    let mapCellCoordinate = new Map<number, number[]>([...cellCoordinate]);
+    let mapCellCoordinateRef = useRef(new Map<number, number[]>([...cellCoordinate]));
 
     useEffect(() => {
         initPixiApp();
@@ -50,22 +50,6 @@ function TicTacToe() {
             }
         };
     }, []);
-
-    useEffect(() => {
-        if (gameState.winner) {
-            gameEnd();
-        }
-    }, [gameState.winner]);
-
-    useEffect(() => {
-        if (gameState.isStarted) {
-            if (gameState.winner) {
-                resetAllState();
-                drawBorder();
-            }
-            init();
-        }
-    }, [gameState.isStarted]);
 
     const handlePointerDown = (ev: FederatedPointerEvent) => {
         const global = ev.global;
@@ -86,16 +70,6 @@ function TicTacToe() {
         app.stage.eventMode = 'static';
         app.stage.hitArea = new Rectangle(0, 0, BOARD_SIZE, BOARD_SIZE);
         app.stage.on('pointerdown', handlePointerDown);
-    }
-
-    const gameEnd = () => {
-        setGameState({...gameState, isStarted: false});
-        const app = appRef.current as Application;
-        if (!app) {
-            return;
-        }
-        app.stage.off('pointerdown');
-        app.stage.hitArea = null;
     }
 
     const initPixiApp = () => {
@@ -147,28 +121,30 @@ function TicTacToe() {
     };
 
     const initGameSettings = () => {
-        setGameState((prev) => ({...prev, isStarted: true}));
+        resetAllState();
+        init();
         if (playerSymbol === 'O') {
             botDraw();
         }
     }
 
     const resetAllState = useCallback(() => {
-        mapCellCoordinate = new Map<number, number[]>([...cellCoordinate]);
-        setGameState({
-            isXNext: playerSymbol === 'X',
+        mapCellCoordinateRef.current = new Map<number, number[]>([...cellCoordinate]);
+        setGameState((prevState) => ({
+            ...prevState,
+            isXNext: true,
             isStarted: true,
-            winner: null,
-            squares: Array(9).fill(null),
-            step: 0
-        });
+            step: 0,
+            squares: Array(9).fill(null)
+        }));
         const app = appRef.current;
         if (app) {
-            app.stage.removeChildren();
+            app?.stage.removeChildren();
+            drawBorder();
             app.stage.hitArea = null;
             app.stage.eventMode = 'none';
         }
-    }, [gameState]);
+    }, []);
 
     const updateGameState = (
         {index, col, row, isUpdatePattern}: { index: number, col: number, row: number, isUpdatePattern?: boolean }
@@ -191,7 +167,8 @@ function TicTacToe() {
                     isXNext: !prevState.isXNext,
                     squares: newSquares,
                     winner: winner,
-                    step: nextStep
+                    step: nextStep,
+                    isStarted: !winner
                 };
             }
             return prevState;
@@ -212,7 +189,10 @@ function TicTacToe() {
     };
 
     const botDraw = (index?: number) => {
-        index && mapCellCoordinate.delete(index);
+        const mapCellCoordinate = mapCellCoordinateRef.current;
+        if (Number.isInteger(index)) {
+            mapCellCoordinate.delete(index as number);
+        }
         const keys = [...mapCellCoordinate.keys()];
         if (keys.length) {
             const randomIndex = Math.floor(Math.random() * keys.length);
